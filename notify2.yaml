@@ -1,0 +1,132 @@
+name: levSpyBits daily
+
+on:
+  schedule:
+    # Hauptlauf 05:17 UTC = 07:17 (Sommerzeit) bzw. 06:17 (Winterzeit) Berlin; der US-Vortagesschluss liegt dann vor.
+    # Ungerade Minute senkt die GitHub-Actions-Warteschlange.
+    - cron: "17 5 * * *"
+    # Sicherheitslauf 11:47 UTC: rechnet NUR, wenn der Hauptlauf heute nicht erfolgreich war (GitHub verzoegert oder
+    # ueberspringt Crons gelegentlich; veraltete Yahoo-Daten sind mittags meist da). Doppelte ntfy verhindert der Zustand.
+    - cron: "47 11 * * *"
+  workflow_dispatch:
+    inputs:
+      ntfy_test:
+        description: "Nur ntfy-Testnachricht senden (prueft Secret NTFY_TOPIC)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write          # Actions duerfen sonst nicht pushen
+
+concurrency:               # keine ueberlappenden Laeufe
+  group: letsgo-signal
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      NTFY_SERVER: ${{ secrets.NTFY_SERVER }}
+      STATUS_FILE: letsgo_status.json
+      CRON: ${{ github.event.schedule }}
+      NTFY_TEST: ${{ github.event.inputs.ntfy_test }}
+    steps:
+      # PAT-Push: Token schon beim Checkout hinterlegen -> Push in DEINEM Namen -> Cron bleibt aktiv.
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: ntfy-Test (nur bei manuellem Start mit Haken)
+        if: github.event.inputs.ntfy_test == 'true'
+        run: python3 send_ntfy.py
+
+      - name: Sicherheitslauf noetig?
+        id: chk
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os, datetime
+          from zoneinfo import ZoneInfo
+          skip = os.environ.get("NTFY_TEST") == "true"
+          f = os.environ["STATUS_FILE"]
+          if not skip and os.environ.get("CRON") == "47 11 * * *" and os.path.exists(f):
+              try:
+                  st = json.load(open(f, encoding="utf-8"))
+                  upd = datetime.datetime.fromisoformat(st.get("updated", "1970-01-01T00:00:00+00:00"))
+                  today = datetime.datetime.now(ZoneInfo("Europe/Berlin")).date()
+                  skip = upd.astimezone(ZoneInfo("Europe/Berlin")).date() == today and not st.get("needsRetry") and not st.get("ntfyFailed")
+              except Exception:
+                  skip = False
+          print(f"skip={'true' if skip else 'false'}")
+          PY
+          cat "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v5
+        if: steps.chk.outputs.skip != 'true'
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        if: steps.chk.outputs.skip != 'true'
+        run: |
+          PKGS='pandas>=2.2,<4 numpy>=1.26,<3 pandas_market_calendars>=4.4,<6 yahooquery'
+          pip install $PKGS || (sleep 30 && pip install $PKGS)
+
+      - name: Run first attempt
+        if: steps.chk.outputs.skip != 'true'
+        run: |
+          rm -f message.txt
+          python3 main.py
+
+      - name: Retry loop (Daten veraltet / Download-Fehler -> 2x nach 30 Min erneut)
+        if: always() && steps.chk.outputs.skip != 'true' && github.event.inputs.ntfy_test != 'true'
+        run: |
+          for attempt in 1 2; do
+            NEEDS_RETRY=$(python3 - <<'PY'
+          import json, os
+          f = os.environ["STATUS_FILE"]
+          try:
+              print("true" if (os.path.exists(f) and json.load(open(f, encoding="utf-8")).get("needsRetry")) else "false")
+          except Exception:
+              print("true")
+          PY
+          )
+            echo "Attempt $attempt: needsRetry=$NEEDS_RETRY"
+            [ "$NEEDS_RETRY" != "true" ] && echo "Daten frisch." && break
+            echo "Warte 30 Min..."; sleep 1800
+            rm -f message.txt; python3 main.py || true
+          done
+
+      - name: Send Discord notification
+        if: always() && steps.chk.outputs.skip != 'true' && github.event.inputs.ntfy_test != 'true'
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then echo "DISCORD_WEBHOOK_URL fehlt."; exit 1; fi
+          if [ -f message.txt ] && [ -s message.txt ]; then
+            MESSAGE=$(cat message.txt)
+          elif [ "${{ job.status }}" != "success" ]; then
+            MESSAGE="⚠️ levSpyBits: Workflow-Fehler (Installation oder Start). Heute kein Signal berechnet — siehe GitHub → Actions → Log. Der Sicherheitslauf/naechste Lauf versucht es erneut."
+          else
+            echo "Keine message.txt."; exit 0
+          fi
+          MESSAGE="${MESSAGE:0:1900}"
+          jq -n --arg content "$MESSAGE" '{content: $content}' > payload.json
+          curl --fail-with-body -sS --retry 3 --retry-delay 10 -X POST -H "Content-Type: application/json" \
+               -d @payload.json "$DISCORD_WEBHOOK_URL"
+
+      - name: Commit and push changes
+        # immer committen (auch wenn Discord scheitert): sonst ginge der ntfy-Zustand verloren -> Doppelmeldung
+        if: always() && steps.chk.outputs.skip != 'true' && github.event.inputs.ntfy_test != 'true'
+        run: |
+          # Autor = DU (Sin3qz) statt github-actions[bot] -> zaehlt als Nutzer-Aktivitaet (Cron bleibt aktiv).
+          git config --global user.name "Sin3qz"
+          git config --global user.email "patrickdietrich2@gmail.com"
+          git add -A
+          git diff --cached --quiet && echo "Nichts zu committen" && exit 0
+          git commit -m "Update signals [ci skip]"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin main && exit 0
+            echo "Push fehlgeschlagen ($i/3) - neuer Versuch in 15 s"; sleep 15
+          done
+          exit 1
