@@ -1,7 +1,7 @@
 {
-  "updated": "2026-10-18T11:38:31.993663+02:00",
+  "updated": "2026-10-19T12:30:33.675594+02:00",
   "name": "levSpyBits",
-  "strategy": "75% 3xSPY + 25% BTC (USD-Signale, SPY-SMA280/TIPS-SMA220, Cooldown 10)",
+  "strategy": "3x S&P 500 + 1x Bitcoin (USD-Signale, SPY-SMA280/TIPS-SMA220, Cooldown 10)",
   "signals": {
     "spy_usd": {
       "key": "spy_usd",
@@ -21,8 +21,8 @@
       "currentDate": "2026-10-16",
       "expectedDate": "2026-10-16",
       "current": 105.54000091552734,
-      "sma": 106.89583719426935,
-      "diffPct": -1.2683714486261488,
+      "sma": 106.89583695151589,
+      "diffPct": -1.2683712244130785,
       "fresh": true
     }
   },
@@ -40,6 +40,7 @@
   "late": false,
   "pendingTrade": null,
   "changeType": null,
+  "weightFree": false,
   "allocation": [
     {
       "asset": "CASH",
@@ -686,7 +687,7 @@
     ]
   },
   "btc_info": {
-    "price": 81382.1484375,
-    "date": "2026-10-17"
+    "price": 82017.6015625,
+    "date": "2026-10-18"
   }
 }
