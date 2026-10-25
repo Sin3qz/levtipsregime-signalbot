@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-24T11:33:05.812508+02:00",
+  "updated": "2026-10-25T10:49:35.893322+01:00",
   "name": "levSpyBits",
   "strategy": "3x S&P 500 + 1x Bitcoin (USD-Signale, SPY-SMA280/TIPS-SMA220, Cooldown 10)",
   "signals": {
@@ -21,8 +21,8 @@
       "currentDate": "2026-10-23",
       "expectedDate": "2026-10-23",
       "current": 106.23999786376953,
-      "sma": 106.87841509038752,
-      "diffPct": -0.5973303646747308,
+      "sma": 106.87841547185724,
+      "diffPct": -0.5973307194620747,
       "fresh": true
     }
   },
@@ -687,7 +687,7 @@
     ]
   },
   "btc_info": {
-    "price": 81074.1875,
-    "date": "2026-10-23"
+    "price": 80790.8359375,
+    "date": "2026-10-24"
   }
 }
