@@ -13,7 +13,7 @@ import pandas as pd
 
 from . import common as U
 from .constants import (STRAT_NAME, SPY_SMA, TIPS_SMA, TLT_SMA, COOLDOWN_DAYS, MARKET_ASSETS_TEXT, SPY_TICKER,
-                        TIPS_TICKER, TLT_TICKER, BTC_TICKER, SPY_PRODUCT, BTC_PRODUCT, IEF_PRODUCT, IEF_ISIN, IEF_TEXT,
+                        TIPS_TICKER, TLT_TICKER, BTC_TICKER, SPX_WEIGHT, SPY_PRODUCT, SPY_ISIN, BTC_PRODUCT, IEF_PRODUCT, IEF_ISIN, IEF_TEXT,
                         TRY_COUNT, GRID_START, STATUS_FILE, NOTIFY_FILE, HISTORY_FILE, INFO_FOOTER, MIN_ROWS)
 
 PENDING_STATE = {}
@@ -68,8 +68,9 @@ def machine(target, cooldown=COOLDOWN_DAYS):
 LABEL = {"MARKET": "MARKT", "IEF": "3x IEF", "CASH": "CASH"}
 TIMELINE_LEAD = {"MARKET": "MARKET", "IEF": "UST_IEF", "CASH": "CASH"}      # Farbe im Dashboard-Zeitbalken
 ALLOCATION = {
-    "MARKET": [{"asset": "SP500", "display": "S&P 500", "weight": None, "leverage": 3, "product": SPY_PRODUCT, "isin": ""},
-               {"asset": "BTC", "display": "Bitcoin", "weight": None, "leverage": 1, "product": BTC_PRODUCT, "isin": ""}],
+    "MARKET": [{"asset": "SP500", "display": "S&P 500", "weight": SPX_WEIGHT, "leverage": 3, "product": SPY_PRODUCT, "isin": SPY_ISIN}]
+              + ([{"asset": "BTC", "display": "Bitcoin", "weight": round(1 - SPX_WEIGHT, 4), "leverage": 1, "product": BTC_PRODUCT, "isin": ""}]
+                 if SPX_WEIGHT < 1 else []),
     "IEF": [{"asset": "UST_IEF", "display": "US-Treasury 7-10y", "weight": 1.0, "leverage": 3, "product": IEF_PRODUCT, "isin": IEF_ISIN}],
     "CASH": [{"asset": "CASH", "display": "Cash", "weight": 1.0, "leverage": 1, "product": "—", "isin": ""}],
 }
@@ -98,7 +99,8 @@ def _msg(c):
         L += [f"⏳ Wechsel zu {LABEL[c['state']]} (Signal: Schluss {U.de(c['change_date'])}) — "
               f"handeln am {U.de(c['pending'])}; ntfy kommt an diesem Handelstag.", ""]
     if c["state"] == "MARKET":
-        L += [f"📈 {STRAT_NAME}: MARKT", "• 3x S&P 500", "• 1x Bitcoin"]
+        L += [f"📈 {STRAT_NAME}: MARKT ({MARKET_ASSETS_TEXT})", f"• {SPY_PRODUCT} ({SPY_ISIN})"] + (
+            [f"• {1 - SPX_WEIGHT:.0%} {BTC_PRODUCT}".replace("%", " %")] if SPX_WEIGHT < 1 else [])
     elif c["state"] == "IEF":
         L += [f"🏦 {STRAT_NAME}: {IEF_TEXT} (100%)", f"• {IEF_PRODUCT} ({IEF_ISIN})"]
     else:
@@ -135,10 +137,11 @@ def run_strategy(raw=None, write_files=True):
         except Exception as e:
             mark_error(e)
             return ("Error", None, f"{STRAT_NAME}: Signaldaten (^SP500TR / TIP / TLT) nicht ladbar: {e}" + "\n" + U.ERROR_HINT)
-        try:
-            raw[BTC_TICKER] = U.fetch_close(BTC_TICKER, 2)
-        except Exception as e:
-            print(f"BTC-Infokurs nicht verfuegbar (ignoriert): {e}")
+        if SPX_WEIGHT < 1:
+            try:
+                raw[BTC_TICKER] = U.fetch_close(BTC_TICKER, 2)
+            except Exception as e:
+                print(f"BTC-Infokurs nicht verfuegbar (ignoriert): {e}")
     prev_first = U.load_json(STATUS_FILE).get("firstDates", {})         # Erkennung abgeschnittener Yahoo-Antworten
     grid = U.build_grid(GRID_START, us_series=[raw[SPY_TICKER], raw[TIPS_TICKER], raw[TLT_TICKER]])
     spy = U.oncal(raw[SPY_TICKER], grid); tips = U.oncal(raw[TIPS_TICKER], grid); tlt = U.oncal(raw[TLT_TICKER], grid)
@@ -211,8 +214,7 @@ def run_strategy(raw=None, write_files=True):
         "allocationState": cur, "cooldown": int(rem[i]), "since": change_date.isoformat(),
         "changedToday": signal is not None, "late": bool(late),
         "pendingTrade": pending.isoformat() if pending else None, "changeType": (_change_type(prev, signal) if signal else None),
-        # Gewichtung im Markt offen: weight = None (Dashboard zeigt nur die Assets, ohne Prozent und ohne Cash-Rest)
-        "weightFree": cur == "MARKET",
+        "weightFree": False,
         "allocation": ALLOCATION[cur],
         "table": {"head": ["Signal (USD)", "Linie", "Abstand", "Status"],
                   "note": (f"MARKT, wenn S&P und TIPS über ihrer Linie; 3x IEF, wenn TIPS unter SMA{TIPS_SMA} und TLT über "
