@@ -3,18 +3,27 @@
 Discord- und ntfy-Signalbot (GitHub Actions) für die freigegebene **levSpyBits**-Strategie (Stand 29.09.2026).
 **KEINE ANLAGEBERATUNG.**
 
-## Strategie (eine Maschine, täglich)
+## Strategie (eine Maschine, täglich, drei Zustände)
 - **MARKT**, wenn **S&P 500 Total Return (`^SP500TR`) > SMA280** **und** **US-TIPS (`TIP`) > SMA220** →
-  **3x S&P 500 + 1x Bitcoin** (Bitcoin nur im Markt, kein Buy & Hold). Sonst **100 % Cash**.
-- **Gewichtung frei (seit 17.10.2026):** Bot, ntfy, Discord und Dashboard nennen im Markt nur die beiden Assets,
-  ohne Prozentangabe. Die Aufteilung zwischen 3x S&P 500 und 1x Bitcoin legst du selbst fest.
-- **Cooldown 10:** Nach jedem Wechsel sind die nächsten 10 Handelstage gesperrt; die früheste Gegenbewegung ist am
-  11. Handelstag möglich (exakt wie im Backtest).
+  **100 % 3x S&P 500** (WisdomTree 3USL; seit 28.10.2026 ohne Bitcoin).
+- **3x IEF (neu ab 28.10.2026)**, wenn **US-TIPS (`TIP`) < SMA220** **und** **US-Treasury 20y+ (`TLT`) > SMA200** →
+  **100 % WisdomTree US Treasuries 10Y 3x Daily Leveraged** (3TYL, IE00BKT09032; dasselbe Produkt wie in levGTAA).
+- **Sonst 100 % Cash** (z. B. TIPS über der Linie, aber S&P darunter; oder TIPS und TLT beide unter der Linie).
+- **Markt-Aufteilung:** `SPX_WEIGHT` in `strategies/constants.py` (1.0 = 100 % 3x S&P 500). Ein Wert unter 1 nimmt den
+  Rest als 1x Bitcoin dazu; Bot, ntfy, Discord und Dashboard zeigen dann beide Quoten.
+- **Cooldown 10:** Nach jedem Wechsel (zwischen allen drei Zuständen) sind die nächsten 10 Handelstage gesperrt; der
+  früheste nächste Wechsel ist am 11. Handelstag möglich (exakt wie im Backtest).
 - **Zeitplan:** Signal = Schlusskurs Tag d, Handel an Tag d+1.
-- Bitcoin-Kurs nur als Info, kein Signal.
-- **Signalquellen = Backtest:** `^SP500TR` (S&P 500 Total Return, USD) und `TIP` (iShares TIPS, adjustiert, USD).
+- Bitcoin ist kein Signal (Kurs nur als Info, wenn ein Bitcoin-Anteil gesetzt ist).
+- **Signalquellen = Backtest:** `^SP500TR` (S&P 500 Total Return, USD), `TIP` (iShares TIPS, adjustiert, USD) und für den
+  IEF-Zustand `TLT` (iShares 20+ Year Treasury, adjustiert, USD — wie das Anleihe-Signal in levGTAA).
+- **Push (ntfy):** bei jedem echten Wechsel — „BUY – heute in den Markt“, „WECHSEL – heute in 3x IEF“, „SELL – heute in Cash“.
 
-Referenz-Backtest mit 75 % 3x S&P 500 / 25 % 1x Bitcoin (nur Referenz, keine Vorgabe) 1987+: CAGR 30,1 %, MaxDD −50 %, Sortino 0,93, z31 2,85, z4 3,02, P(DD<−50 %) 7,7 %, P(DD<−75 %) 0 %;
+**Prüfung der IEF-Erweiterung (28.10.2026):** Bot-Maschine gegen eine unabhängige Nachrechnung über 9.273 Handelstage:
+0 Abweichungen; nach jedem Wechsel genau 10 Sperrtage; ohne den IEF-Zweig ist die Maschine identisch zur alten Regel.
+Anteil der Tage seit 10/2004: Markt 63,8 %, 3x IEF 6,7 %, Cash 29,4 %.
+
+Referenz-Backtest der alten Regel (ohne IEF) mit 75 % 3x S&P 500 / 25 % 1x Bitcoin 1987+: CAGR 30,1 %, MaxDD −50 %, Sortino 0,93, z31 2,85, z4 3,02, P(DD<−50 %) 7,7 %, P(DD<−75 %) 0 %;
 Bitcoin ohne Drift 27,2 % / Sortino 0,85. Realistische Erwartung eher 26–28 %.
 
 **Geprüft:** Die Bot-Maschine ist ab Oktober 2004 Tag für Tag identisch mit der Backtest-Maschine (5.448 Handelstage,
@@ -36,7 +45,7 @@ Bitcoin ohne Drift 27,2 % / Sortino 0,85. Realistische Erwartung eher 26–28 %.
   Kursdaten → fehlender Tag fiel raus → Zähler „hing“ einen Tag) ist behoben (Test: `t_cool.py`).
 - Schmale, handytaugliche Nachricht; Datenprüfung (letzter Kurs, Lücken, Sprünge > 30 %).
 - `letsgo_status.json` enthält jetzt auch Allokation, Cooldown und die letzten 120 Handelstage für den Zeitbalken im
-  Dashboard. Im Markt steht dort `"weight": null` je Asset und `"weightFree": true` (Gewichtung offen).
+  Dashboard. Im Markt steht dort die Quote je Asset (`"weight": 1.0` für 3x S&P 500).
 
 ## Dateien
 ```
@@ -45,7 +54,8 @@ strategies/constants.py      ALLE Parameter
 strategies/levspybits.py     Kern + Runner
 strategies/common.py         Kalender, Download, Datenprüfung (gleich in allen Bots)
 .github/workflows/notify2.yaml
-letsgo_status.json, history_280_220_10_USD.txt, notify_state_levspybits.json  (vom Bot geschrieben)
+letsgo_status.json, history_280_220_10_USD.txt (Spalten: Datum, S&P, TIPS, S&P-SMA, TIPS-SMA, Cooldown, Zustand, TLT, TLT-SMA),
+notify_state_levspybits.json  (vom Bot geschrieben)
 ```
 Secrets: `DISCORD_WEBHOOK_URL`, `NTFY_TOPIC` (optional `NTFY_SERVER`), `PAT_PUSH`. Workflow permissions: Read and write.
 

@@ -26,11 +26,12 @@ def save_text(text):
             f.write(text)
 
 
-TITLES = {"MARKET": f"{STRAT_ASCII}: BUY - heute in den Markt", "CASH": f"{STRAT_ASCII}: SELL - heute in Cash"}
+TITLES = {"MARKET": f"{STRAT_ASCII}: BUY - heute in den Markt", "CASH": f"{STRAT_ASCII}: SELL - heute in Cash",
+          "IEF": f"{STRAT_ASCII}: WECHSEL - heute in 3x IEF (US-Treasury 7-10y)"}
 
 
 def main():
-    # signal: None = nur Discord-Status; "MARKET"/"CASH" = echter Wechsel -> ntfy; "Error"
+    # signal: None = nur Discord-Status; "MARKET"/"IEF"/"CASH" = echter Wechsel -> ntfy; "Error"
     signal, ntfy_text, discord_text = run_strategy()
     save_text(discord_text)
     if signal in TITLES:
