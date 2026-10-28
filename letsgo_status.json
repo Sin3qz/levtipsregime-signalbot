@@ -1,37 +1,49 @@
 {
-  "updated": "2026-10-28T12:21:29.522948+01:00",
+  "updated": "2026-10-29T00:04:54.299219+01:00",
   "name": "levSpyBits",
-  "strategy": "3x S&P 500 + 1x Bitcoin (USD-Signale, SPY-SMA280/TIPS-SMA220, Cooldown 10)",
+  "strategy": "100 % 3x S&P 500 | 3x US-Treasury 7-10y (IEF) (USD-Signale, SPY-SMA280/TIPS-SMA220/TLT-SMA200, Cooldown 10)",
   "signals": {
     "spy_usd": {
       "key": "spy_usd",
       "name": "S&P 500 (USD)",
       "ticker": "^SP500TR",
-      "currentDate": "2026-10-27",
-      "expectedDate": "2026-10-27",
-      "current": 17329.470703125,
-      "sma": 15946.44901297433,
-      "diffPct": 8.672913255016311,
+      "currentDate": "2026-10-28",
+      "expectedDate": "2026-10-28",
+      "current": 17377.560546875,
+      "sma": 15956.269587053572,
+      "diffPct": 8.907413804130137,
       "fresh": true
     },
     "tips_usd": {
       "key": "tips_usd",
       "name": "US-TIPS (USD)",
       "ticker": "TIP",
-      "currentDate": "2026-10-27",
-      "expectedDate": "2026-10-27",
-      "current": 106.30999755859375,
-      "sma": 106.87856362082742,
-      "diffPct": -0.5319738991354406,
+      "currentDate": "2026-10-28",
+      "expectedDate": "2026-10-28",
+      "current": 106.26000213623047,
+      "sma": 106.87784052762119,
+      "diffPct": -0.578079037095669,
+      "fresh": true
+    },
+    "tlt_usd": {
+      "key": "tlt_usd",
+      "name": "US-Treasury 20y+ (USD)",
+      "ticker": "TLT",
+      "currentDate": "2026-10-28",
+      "expectedDate": "2026-10-28",
+      "current": 80.98999786376953,
+      "sma": 83.2605897140503,
+      "diffPct": -2.7270907617624074,
       "fresh": true
     }
   },
   "needsRetry": false,
   "dataWarnings": [],
-  "asOf": "2026-10-27",
+  "asOf": "2026-10-28",
   "firstDates": {
     "^SP500TR": "1988-01-04",
-    "TIP": "2003-12-05"
+    "TIP": "2003-12-05",
+    "TLT": "2002-07-30"
   },
   "allocationState": "CASH",
   "cooldown": 0,
@@ -58,18 +70,24 @@
       "Abstand",
       "Status"
     ],
-    "note": "MARKT, wenn beide über ihrer Linie; nach jedem Wechsel 10 Handelstage Sperre",
+    "note": "MARKT, wenn S&P und TIPS über ihrer Linie; 3x IEF, wenn TIPS unter SMA220 und TLT über SMA200; sonst Cash; nach jedem Wechsel 10 Handelstage Sperre",
     "rows": [
       [
         "S&P 500 (^SP500TR)",
         "SMA280",
-        0.086729,
+        0.089074,
         "über"
       ],
       [
         "US-TIPS (TIP)",
         "SMA220",
-        -0.00532,
+        -0.005781,
+        "unter"
+      ],
+      [
+        "US-Treasury 20y+ (TLT)",
+        "SMA200",
+        -0.027271,
         "unter"
       ]
     ],
@@ -82,13 +100,8 @@
   },
   "timeline": {
     "span": "letzte 120 Handelstage",
-    "what": "ob im Markt (Farbe) oder in Cash (grau)",
+    "what": "ob im Markt (Farbe), in 3x IEF (türkis) oder in Cash (grau)",
     "items": [
-      {
-        "date": "2026-05-07",
-        "lead": "MARKET",
-        "allocation": "MARKET"
-      },
       {
         "date": "2026-05-08",
         "lead": "MARKET",
@@ -683,11 +696,12 @@
         "date": "2026-10-27",
         "lead": "CASH",
         "allocation": "CASH"
+      },
+      {
+        "date": "2026-10-28",
+        "lead": "CASH",
+        "allocation": "CASH"
       }
     ]
-  },
-  "btc_info": {
-    "price": 80805.078125,
-    "date": "2026-10-27"
   }
 }
