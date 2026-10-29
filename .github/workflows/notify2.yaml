@@ -3,11 +3,15 @@ name: levTipsRegime daily
 on:
   schedule:
     # Hauptlauf 05:17 UTC = 07:17 (Sommerzeit) bzw. 06:17 (Winterzeit) Berlin; der US-Vortagesschluss liegt dann vor.
-    # Ungerade Minute senkt die GitHub-Actions-Warteschlange.
+    # Sicherheitsläufe: GitHub startet geplante Läufe teils Stunden später oder lässt sie aus. Jeder geplante Lauf rechnet
+    # nur, wenn heute noch kein erfolgreicher Lauf war (oder der Bot veraltete Kurse gemeldet hat); doppelte ntfy verhindert
+    # zusätzlich der gespeicherte Zustand. Ungerade Minuten senken die Warteschlange.
     - cron: "17 5 * * *"
-    # Sicherheitslauf 11:47 UTC: rechnet NUR, wenn der Hauptlauf heute nicht erfolgreich war (GitHub verzoegert oder
-    # ueberspringt Crons gelegentlich; veraltete Yahoo-Daten sind mittags meist da). Doppelte ntfy verhindert der Zustand.
+    - cron: "47 6 * * *"
+    - cron: "47 8 * * *"
     - cron: "47 11 * * *"
+    - cron: "17 15 * * *"
+    - cron: "47 18 * * *"
   workflow_dispatch:
     inputs:
       ntfy_test:
@@ -43,7 +47,7 @@ jobs:
         if: github.event.inputs.ntfy_test == 'true'
         run: python3 send_ntfy.py
 
-      - name: Sicherheitslauf noetig?
+      - name: Heute schon erfolgreich gelaufen?
         id: chk
         run: |
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
@@ -51,7 +55,7 @@ jobs:
           from zoneinfo import ZoneInfo
           skip = os.environ.get("NTFY_TEST") == "true"
           f = os.environ["STATUS_FILE"]
-          if not skip and os.environ.get("CRON") == "47 11 * * *" and os.path.exists(f):
+          if not skip and os.environ.get("CRON") and os.path.exists(f):     # jeder geplante Lauf; manueller Start rechnet immer
               try:
                   st = json.load(open(f, encoding="utf-8"))
                   upd = datetime.datetime.fromisoformat(st.get("updated", "1970-01-01T00:00:00+00:00"))
