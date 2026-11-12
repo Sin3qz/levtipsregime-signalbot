@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-11T00:43:45.404386+01:00",
+  "updated": "2026-11-12T03:00:16.741119+01:00",
   "name": "levSpyBits",
   "strategy": "100 % 3x S&P 500 | 3x US-Treasury 7-10y (IEF) (USD-Signale, SPY-SMA280/TIPS-SMA220/TLT-SMA200, Cooldown 10)",
   "signals": {
@@ -7,8 +7,8 @@
       "key": "spy_usd",
       "name": "S&P 500 (USD)",
       "ticker": "^SP500TR",
-      "currentDate": "2026-11-10",
-      "expectedDate": "2026-11-10",
+      "currentDate": "2026-11-11",
+      "expectedDate": "2026-11-11",
       "current": 16882.609375,
       "sma": 16026.505339704241,
       "diffPct": 5.341801079832642,
@@ -19,26 +19,29 @@
       "name": "US-TIPS (USD)",
       "ticker": "TIP",
       "currentDate": "2026-11-10",
-      "expectedDate": "2026-11-10",
+      "expectedDate": "2026-11-11",
       "current": 105.29000091552734,
-      "sma": 106.8735111583363,
-      "diffPct": -1.4816676514566196,
-      "fresh": true
+      "sma": 106.87351129705256,
+      "diffPct": -1.4816677793282995,
+      "fresh": false
     },
     "tlt_usd": {
       "key": "tlt_usd",
       "name": "US-Treasury 20y+ (USD)",
       "ticker": "TLT",
       "currentDate": "2026-11-10",
-      "expectedDate": "2026-11-10",
+      "expectedDate": "2026-11-11",
       "current": 80.87999725341797,
-      "sma": 83.11591091156006,
-      "diffPct": -2.6901150858121836,
-      "fresh": true
+      "sma": 83.11591079711914,
+      "diffPct": -2.6901149518278156,
+      "fresh": false
     }
   },
-  "needsRetry": false,
-  "dataWarnings": [],
+  "needsRetry": true,
+  "dataWarnings": [
+    "US-TIPS (TIP): letzter Kurs 10.11.2026 (erwartet 11.11.2026)",
+    "US-Treasury 20y+ (TLT): letzter Kurs 10.11.2026 (erwartet 11.11.2026)"
+  ],
   "asOf": "2026-11-10",
   "firstDates": {
     "^SP500TR": "1988-01-04",
