@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-15T13:45:10.976775+01:00",
+  "updated": "2026-11-16T00:10:47.378471+01:00",
   "name": "levSpyBits",
   "strategy": "100 % 3x S&P 500 | 3x US-Treasury 7-10y (IEF) (USD-Signale, SPY-SMA280/TIPS-SMA220/TLT-SMA200, Cooldown 10)",
   "signals": {
@@ -21,8 +21,8 @@
       "currentDate": "2026-11-13",
       "expectedDate": "2026-11-13",
       "current": 104.61000061035156,
-      "sma": 106.69784695018421,
-      "diffPct": -1.956783945984808,
+      "sma": 106.69784677678888,
+      "diffPct": -1.9567837866541704,
       "fresh": true
     },
     "tlt_usd": {
@@ -32,8 +32,8 @@
       "currentDate": "2026-11-13",
       "expectedDate": "2026-11-13",
       "current": 79.37999725341797,
-      "sma": 82.71418796539307,
-      "diffPct": -4.030977990583784,
+      "sma": 82.71418766021729,
+      "diffPct": -4.030977636504018,
       "fresh": true
     }
   },
