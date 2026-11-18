@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-18T03:19:34.351625+01:00",
+  "updated": "2026-11-18T06:31:19.876461+01:00",
   "name": "levSpyBits",
   "strategy": "100 % 3x S&P 500 | 3x US-Treasury 7-10y (IEF) (USD-Signale, SPY-SMA280/TIPS-SMA220/TLT-SMA200, Cooldown 10)",
   "signals": {
@@ -9,40 +9,37 @@
       "ticker": "^SP500TR",
       "currentDate": "2026-11-17",
       "expectedDate": "2026-11-17",
-      "current": 16654.349609375,
-      "sma": 16055.71826171875,
-      "diffPct": 3.7284619591485546,
+      "current": 16483.75,
+      "sma": 16061.416047014509,
+      "diffPct": 2.6294938861508133,
       "fresh": true
     },
     "tips_usd": {
       "key": "tips_usd",
       "name": "US-TIPS (USD)",
       "ticker": "TIP",
-      "currentDate": "2026-11-16",
+      "currentDate": "2026-11-17",
       "expectedDate": "2026-11-17",
-      "current": 104.56999969482422,
-      "sma": 106.69082260131836,
-      "diffPct": -1.987821309072868,
-      "fresh": false
+      "current": 104.83000183105469,
+      "sma": 106.68519991094416,
+      "diffPct": -1.738946059470392,
+      "fresh": true
     },
     "tlt_usd": {
       "key": "tlt_usd",
       "name": "US-Treasury 20y+ (USD)",
       "ticker": "TLT",
-      "currentDate": "2026-11-16",
+      "currentDate": "2026-11-17",
       "expectedDate": "2026-11-17",
-      "current": 79.37999725341797,
-      "sma": 82.6918860244751,
-      "diffPct": -4.005095215843635,
-      "fresh": false
+      "current": 79.55000305175781,
+      "sma": 82.67163223266601,
+      "diffPct": -3.775937521256234,
+      "fresh": true
     }
   },
-  "needsRetry": true,
-  "dataWarnings": [
-    "US-TIPS (TIP): letzter Kurs 16.11.2026 (erwartet 17.11.2026)",
-    "US-Treasury 20y+ (TLT): letzter Kurs 16.11.2026 (erwartet 17.11.2026)"
-  ],
-  "asOf": "2026-11-16",
+  "needsRetry": false,
+  "dataWarnings": [],
+  "asOf": "2026-11-17",
   "firstDates": {
     "^SP500TR": "1988-01-04",
     "TIP": "2003-12-05",
@@ -78,19 +75,19 @@
       [
         "S&P 500 (^SP500TR)",
         "SMA280",
-        0.037285,
+        0.026295,
         "über"
       ],
       [
         "US-TIPS (TIP)",
         "SMA220",
-        -0.019878,
+        -0.017389,
         "unter"
       ],
       [
         "US-Treasury 20y+ (TLT)",
         "SMA200",
-        -0.040051,
+        -0.037759,
         "unter"
       ]
     ],
@@ -105,11 +102,6 @@
     "span": "letzte 120 Handelstage",
     "what": "ob im Markt (Farbe), in 3x IEF (türkis) oder in Cash (grau)",
     "items": [
-      {
-        "date": "2026-05-28",
-        "lead": "MARKET",
-        "allocation": "MARKET"
-      },
       {
         "date": "2026-05-29",
         "lead": "MARKET",
@@ -702,6 +694,11 @@
       },
       {
         "date": "2026-11-16",
+        "lead": "CASH",
+        "allocation": "CASH"
+      },
+      {
+        "date": "2026-11-17",
         "lead": "CASH",
         "allocation": "CASH"
       }
