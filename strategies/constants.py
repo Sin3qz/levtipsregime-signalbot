@@ -4,9 +4,9 @@
 #  Single Source of Truth fuer alle Parameter und Anzeigen.
 #
 #  EINE Maschine, taegliche Entscheidung auf USD-1x-Schlusskursen, drei Zustaende:
-#     MARKT  =  S&P 500 Total Return (^SP500TR) > SMA280   UND   US-TIPS (TIP) > SMA220
+#     MARKT  =  S&P 500 Total Return (^SP500TR) > SMA280   UND   US-TIPS (TIP) > SMA200
 #               -> 100 % 3x-S&P 500   (optional mit 1x-Bitcoin-Anteil ueber SPX_WEIGHT)
-#     IEF    =  (ab 28.10.2026) US-TIPS (TIP) < SMA220   UND   US-Treasury 20y+ (TLT) > SMA200
+#     IEF    =  (ab 28.10.2026) US-TIPS (TIP) < SMA200   UND   US-Treasury 20y+ (TLT) > SMA200
 #               -> 100 % 3x US-Treasury 7-10y (WisdomTree 3TYL, wie in levGTAA)
 #     sonst  -> 100 % Cash
 #  Cooldown: nach jedem Wechsel zwischen MARKT, IEF und CASH sind die naechsten 10 Handelstage gesperrt
@@ -23,9 +23,19 @@ STRAT_NAME = "levSpyBits"
 STRAT_ASCII = "levSpyBits"
 
 SPY_SMA = 280
-TIPS_SMA = 220
-TLT_SMA = 200                     # IEF-Zustand: TIPS < SMA220 und TLT > SMA200
+TIPS_SMA = 200                    # ab 23.11.2026 (vorher 220), siehe unten
+TLT_SMA = 200                     # IEF-Zustand: TIPS < SMA_TIPS und TLT > SMA200
+# Parameter 22.11.2026 (Langzeitpruefung 1987-2026, ab 2001 echte TIPS; Dashboard-Repo studien/STUDIE.md): Die Gegenprobe
+# ausserhalb der Stichprobe zeigt, dass Backtest-Raenge innerhalb der Plateaus nichts vorhersagen. Gewaehlt werden deshalb
+# Standardwerte (200-Tage-Linie), ausser sie liegen an einer Klippe:
+#   TIPS 200: Standard, im Plateau 160-220, 30 Tage vor der Kante ab 230; je Drittel ausgewogen, kleinster MaxDD.
+#   S&P 280: der Standard 200 liegt direkt neben der Klippe 170-190 (2000-2003 MaxDD bis -80 %) -> Mitte des sicheren
+#   Bereichs 220-340.   TLT 200 (ohne Einfluss), Cooldown 10 (Mitte 5-15).
 COOLDOWN_DAYS = 10
+# Stichtag: Entscheidungen auf Schlusskursen vor PARAM_SWITCH mit den alten Linien (so wurde gehandelt), ab dann
+# 280/200. Am Stichtag zeigen alte und neue Regel denselben Zustand (Cash) -> kein Handel durch die Umstellung.
+PARAM_SWITCH = "2026-11-23"
+OLD_SMA = (280, 220)              # (S&P, TIPS) fuer Entscheidungen bis 22.11.2026
 
 # Anteil 3x S&P 500 im Markt; der Rest (1 - SPX_WEIGHT) waere 1x Bitcoin. 1.0 = nur S&P 500, kein Bitcoin.
 SPX_WEIGHT = 1.0
