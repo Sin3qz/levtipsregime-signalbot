@@ -34,6 +34,10 @@ TLT_SMA = 200                     # IEF-Zustand: TIPS < SMA_TIPS und TLT > SMA20
 # (nicht signifikant, Bootstrap P 0,61 - Wahl der Plateau-Mitte statt Randlage). Zwei oder drei Varianten
 # gemischt brachten keinen signifikanten Vorteil (P 0,85 bzw. 0,79) -> eine Variante.
 COOLDOWN_DAYS = 10
+# Stichtag: Entscheidungen auf Schlusskursen vor PARAM_SWITCH mit den alten Linien (so wurde gehandelt), ab dann
+# 220/190. Am Stichtag zeigen alte und neue Regel denselben Zustand (Cash) -> kein Handel durch die Umstellung.
+PARAM_SWITCH = "2026-11-23"
+OLD_SMA = (280, 220)              # (S&P, TIPS) bis 22.11.2026
 
 # Anteil 3x S&P 500 im Markt; der Rest (1 - SPX_WEIGHT) waere 1x Bitcoin. 1.0 = nur S&P 500, kein Bitcoin.
 SPX_WEIGHT = 1.0
