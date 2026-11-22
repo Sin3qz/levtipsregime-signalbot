@@ -4,9 +4,9 @@ Discord- und ntfy-Signalbot (GitHub Actions) für die freigegebene **levSpyBits*
 **KEINE ANLAGEBERATUNG.**
 
 ## Strategie (eine Maschine, täglich, drei Zustände)
-- **MARKT**, wenn **S&P 500 Total Return (`^SP500TR`) > SMA220** **und** **US-TIPS (`TIP`) > SMA190** →
+- **MARKT**, wenn **S&P 500 Total Return (`^SP500TR`) > SMA280** **und** **US-TIPS (`TIP`) > SMA220** →
   **100 % 3x S&P 500** (WisdomTree 3USL; seit 28.10.2026 ohne Bitcoin).
-- **3x IEF (neu ab 28.10.2026)**, wenn **US-TIPS (`TIP`) < SMA190** **und** **US-Treasury 20y+ (`TLT`) > SMA200** →
+- **3x IEF (neu ab 28.10.2026)**, wenn **US-TIPS (`TIP`) < SMA220** **und** **US-Treasury 20y+ (`TLT`) > SMA200** →
   **100 % WisdomTree US Treasuries 10Y 3x Daily Leveraged** (3TYL, IE00BKT09032; dasselbe Produkt wie in levGTAA).
 - **Sonst 100 % Cash** (z. B. TIPS über der Linie, aber S&P darunter; oder TIPS und TLT beide unter der Linie).
 - **Markt-Aufteilung:** `SPX_WEIGHT` in `strategies/constants.py` (1.0 = 100 % 3x S&P 500). Ein Wert unter 1 nimmt den
@@ -31,7 +31,6 @@ Bitcoin ohne Drift 27,2 % / Sortino 0,85. Realistische Erwartung eher 26–28 %.
 
 ## Was sich gegenüber der alten Version geändert hat
 - SMA160/160 → **SMA280 (S&P) / SMA220 (TIPS)**, Freeze 15 → **Cooldown 10**.
-- 22.11.2026: **S&P SMA280 → SMA220, TIPS SMA220 → SMA190** (TLT 200 und Cooldown 10 bleiben). Langzeitprüfung 1987–2026, ab 2001 mit echten TIPS, gemeinsames Feinraster aller vier Parameter; gewählt ist jeweils die Mitte der robusten Umgebung: S&P-Plateau 200–240 (breiter und besser als 280–300), TIPS flach 170–210 mit Kante ab 230. Sharpe 0,737 statt 0,724, MaxDD −56,4 % statt −58,7 % (nicht signifikant, P 0,61). Zwei oder drei gemischte Varianten bringen keinen signifikanten Vorteil → eine Variante. Details: `studien/STUDIE.md` im Dashboard-Repo. Stichtag `PARAM_SWITCH` = 23.11.2026: Entscheidungen auf Schlusskursen davor laufen mit den alten Linien 280/220 (so wurde gehandelt; Historie, Dashboard und Wechseldaten bleiben unverändert), ab dann 220/190. Am Stichtag zeigen alte und neue Regel denselben Zustand (Cash seit 28.08.2026, keine Sperre), die Umstellung löst also keinen Handel aus.
 - Cooldown-Zählung korrigiert: Die alte Version erlaubte den nächsten Wechsel einen Tag früher als der Backtest
   („Freeze 15“ entsprach dort 14 Sperrtagen).
 - Die Allokation wird bei jedem Lauf aus der vollen Historie neu berechnet (deterministisch, gleich dem Backtest).
@@ -55,7 +54,7 @@ strategies/constants.py      ALLE Parameter
 strategies/levspybits.py     Kern + Runner
 strategies/common.py         Kalender, Download, Datenprüfung (gleich in allen Bots)
 .github/workflows/notify2.yaml
-letsgo_status.json, history_220_190_10_USD.txt (Dateiname aus den Parametern; die alte history_280_220_10_USD.txt wird nicht mehr fortgeschrieben; Spalten: Datum, S&P, TIPS, S&P-SMA, TIPS-SMA, Cooldown, Zustand, TLT, TLT-SMA),
+letsgo_status.json, history_280_220_10_USD.txt (Spalten: Datum, S&P, TIPS, S&P-SMA, TIPS-SMA, Cooldown, Zustand, TLT, TLT-SMA),
 notify_state_levspybits.json  (vom Bot geschrieben)
 ```
 Secrets: `DISCORD_WEBHOOK_URL`, `NTFY_TOPIC` (optional `NTFY_SERVER`), `PAT_PUSH`. Workflow permissions: Read and write.
