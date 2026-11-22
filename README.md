@@ -4,9 +4,9 @@ Discord- und ntfy-Signalbot (GitHub Actions) für die freigegebene **levSpyBits*
 **KEINE ANLAGEBERATUNG.**
 
 ## Strategie (eine Maschine, täglich, drei Zustände)
-- **MARKT**, wenn **S&P 500 Total Return (`^SP500TR`) > SMA280** **und** **US-TIPS (`TIP`) > SMA220** →
+- **MARKT**, wenn **S&P 500 Total Return (`^SP500TR`) > SMA280** **und** **US-TIPS (`TIP`) > SMA210** →
   **100 % 3x S&P 500** (WisdomTree 3USL; seit 28.10.2026 ohne Bitcoin).
-- **3x IEF (neu ab 28.10.2026)**, wenn **US-TIPS (`TIP`) < SMA220** **und** **US-Treasury 20y+ (`TLT`) > SMA200** →
+- **3x IEF (neu ab 28.10.2026)**, wenn **US-TIPS (`TIP`) < SMA210** **und** **US-Treasury 20y+ (`TLT`) > SMA200** →
   **100 % WisdomTree US Treasuries 10Y 3x Daily Leveraged** (3TYL, IE00BKT09032; dasselbe Produkt wie in levGTAA).
 - **Sonst 100 % Cash** (z. B. TIPS über der Linie, aber S&P darunter; oder TIPS und TLT beide unter der Linie).
 - **Markt-Aufteilung:** `SPX_WEIGHT` in `strategies/constants.py` (1.0 = 100 % 3x S&P 500). Ein Wert unter 1 nimmt den
@@ -31,6 +31,7 @@ Bitcoin ohne Drift 27,2 % / Sortino 0,85. Realistische Erwartung eher 26–28 %.
 
 ## Was sich gegenüber der alten Version geändert hat
 - SMA160/160 → **SMA280 (S&P) / SMA220 (TIPS)**, Freeze 15 → **Cooldown 10**.
+- 22.11.2026: TIPS **SMA220 → SMA210** (220 lag direkt vor der Kante ab 230; 210 ist in 1987–2026 und 2001–2026 mit echten TIPS ein lokales Hoch, siehe `studien/STUDIE.md` im Dashboard-Repo).
 - Cooldown-Zählung korrigiert: Die alte Version erlaubte den nächsten Wechsel einen Tag früher als der Backtest
   („Freeze 15“ entsprach dort 14 Sperrtagen).
 - Die Allokation wird bei jedem Lauf aus der vollen Historie neu berechnet (deterministisch, gleich dem Backtest).

@@ -36,8 +36,8 @@ def commit_notify_state():
 # ==========================================================================
 def target_series(spy, tips, tlt, spy_sma=SPY_SMA, tips_sma=TIPS_SMA, tlt_sma=TLT_SMA):
     """Zielzustand je Tag (ohne Cooldown):
-         MARKET, wenn S&P > SMA280 UND TIPS > SMA220;
-         IEF,    wenn TIPS < SMA220 UND TLT > SMA200  (TIPS-Abstand strikt negativ, beide Werte vorhanden);
+         MARKET, wenn S&P > SMA_SPY UND TIPS > SMA_TIPS (Standard aus constants);
+         IEF,    wenn TIPS < SMA_TIPS UND TLT > SMA_TLT  (TIPS-Abstand strikt negativ, beide Werte vorhanden);
          sonst CASH.  Fehlende Werte (SMA noch nicht berechenbar) = Bedingung nicht erfuellt."""
     ds = (spy / spy.rolling(spy_sma).mean() - 1).values
     dt = (tips / tips.rolling(tips_sma).mean() - 1).values
