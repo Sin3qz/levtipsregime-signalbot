@@ -55,7 +55,7 @@ strategies/constants.py      ALLE Parameter
 strategies/levspybits.py     Kern + Runner
 strategies/common.py         Kalender, Download, Datenprüfung (gleich in allen Bots)
 .github/workflows/notify2.yaml
-letsgo_status.json, history_220_190_10_USD.txt (Dateiname aus den Parametern; Spalten: Datum, S&P, TIPS, S&P-SMA, TIPS-SMA, Cooldown, Zustand, TLT, TLT-SMA),
+letsgo_status.json, history_220_190_10_USD.txt (Dateiname aus den Parametern; die alte history_280_220_10_USD.txt wird nicht mehr fortgeschrieben; Spalten: Datum, S&P, TIPS, S&P-SMA, TIPS-SMA, Cooldown, Zustand, TLT, TLT-SMA),
 notify_state_levspybits.json  (vom Bot geschrieben)
 ```
 Secrets: `DISCORD_WEBHOOK_URL`, `NTFY_TOPIC` (optional `NTFY_SERVER`), `PAT_PUSH`. Workflow permissions: Read and write.
