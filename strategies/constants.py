@@ -4,9 +4,9 @@
 #  Single Source of Truth fuer alle Parameter und Anzeigen.
 #
 #  EINE Maschine, taegliche Entscheidung auf USD-1x-Schlusskursen, drei Zustaende:
-#     MARKT  =  S&P 500 Total Return (^SP500TR) > SMA280   UND   US-TIPS (TIP) > SMA210
+#     MARKT  =  S&P 500 Total Return (^SP500TR) > SMA220   UND   US-TIPS (TIP) > SMA190
 #               -> 100 % 3x-S&P 500   (optional mit 1x-Bitcoin-Anteil ueber SPX_WEIGHT)
-#     IEF    =  (ab 28.10.2026) US-TIPS (TIP) < SMA210   UND   US-Treasury 20y+ (TLT) > SMA200
+#     IEF    =  (ab 28.10.2026) US-TIPS (TIP) < SMA190   UND   US-Treasury 20y+ (TLT) > SMA200
 #               -> 100 % 3x US-Treasury 7-10y (WisdomTree 3TYL, wie in levGTAA)
 #     sonst  -> 100 % Cash
 #  Cooldown: nach jedem Wechsel zwischen MARKT, IEF und CASH sind die naechsten 10 Handelstage gesperrt
@@ -22,13 +22,17 @@
 STRAT_NAME = "levSpyBits"
 STRAT_ASCII = "levSpyBits"
 
-SPY_SMA = 280
-TIPS_SMA = 210                    # ab 22.11.2026 (vorher 220), siehe unten
+SPY_SMA = 220                     # ab 22.11.2026 (vorher 280), siehe unten
+TIPS_SMA = 190                    # ab 22.11.2026 (vorher 220), siehe unten
 TLT_SMA = 200                     # IEF-Zustand: TIPS < SMA_TIPS und TLT > SMA200
-# TIPS-SMA 210 statt 220 (Langzeitpruefung 1987-2026 und 2001-2026 mit echten TIPS, Dashboard-Repo studien/STUDIE.md,
-# Nachtrag 22.11.2026): TIPS 150-220 flach, ab 230 deutlich schwaecher; 220 lag direkt an dieser Kante, 210 ist in beiden
-# Zeitraeumen ein lokales Hoch der Umgebung. S&P 280 (oberes von zwei Plateaus 210-230 / 280-300, weit weg von der
-# Klippe <= 180), TLT 200 (flach) und Cooldown 10 (Mitte 5-15) bleiben.
+# Parameter 22.11.2026 aus der Langzeitpruefung 1987-2026 (ab 2001 mit echten TIPS-Reihen, Dashboard-Repo
+# studien/STUDIE.md): gemeinsames Feinraster S&P x TIPS x TLT x Cooldown (1.485 Varianten), Auswahl = Mitte der
+# robusten Umgebung (Mittel ueber S&P +-20, TIPS +-20, Cooldown +-3), nicht der Einzelgipfel.
+#   S&P: zwei Plateaus 200-240 und 280-300; das untere ist breiter und in der Umgebung besser -> Mitte 220.
+#   TIPS: flach 170-210, Kante ab 230 -> Mitte 190.   TLT: flach -> 200.   Cooldown: Mitte 10.
+# 220/190 gegen 280/220: Sharpe 0,737 vs 0,724, MaxDD -56,4 vs -58,7 %, ab 2001 Sharpe 0,871 vs 0,828
+# (nicht signifikant, Bootstrap P 0,61 - Wahl der Plateau-Mitte statt Randlage). Zwei oder drei Varianten
+# gemischt brachten keinen signifikanten Vorteil (P 0,85 bzw. 0,79) -> eine Variante.
 COOLDOWN_DAYS = 10
 
 # Anteil 3x S&P 500 im Markt; der Rest (1 - SPX_WEIGHT) waere 1x Bitcoin. 1.0 = nur S&P 500, kein Bitcoin.
