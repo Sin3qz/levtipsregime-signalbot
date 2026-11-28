@@ -4,9 +4,9 @@
 #  Single Source of Truth fuer alle Parameter und Anzeigen.
 #
 #  EINE Maschine, taegliche Entscheidung auf USD-1x-Schlusskursen, drei Zustaende:
-#     MARKT  =  S&P 500 Total Return (^SP500TR) > SMA280   UND   US-TIPS (TIP) > SMA220
+#     MARKT  =  S&P 500 Total Return (^SP500TR) > SMA225   UND   US-TIPS (TIP) > SMA180
 #               -> 100 % 3x-S&P 500   (optional mit 1x-Bitcoin-Anteil ueber SPX_WEIGHT)
-#     IEF    =  (ab 28.10.2026) US-TIPS (TIP) < SMA220   UND   US-Treasury 20y+ (TLT) > SMA200
+#     IEF    =  (ab 28.10.2026) US-TIPS (TIP) < SMA180   UND   US-Treasury 20y+ (TLT) > SMA200
 #               -> 100 % 3x US-Treasury 7-10y (WisdomTree 3TYL, wie in levGTAA)
 #     sonst  -> 100 % Cash
 #  Cooldown: nach jedem Wechsel zwischen MARKT, IEF und CASH sind die naechsten 10 Handelstage gesperrt
@@ -22,10 +22,23 @@
 STRAT_NAME = "levSpyBits"
 STRAT_ASCII = "levSpyBits"
 
-SPY_SMA = 280
-TIPS_SMA = 220
-TLT_SMA = 200                     # IEF-Zustand: TIPS < SMA220 und TLT > SMA200
+SPY_SMA = 225                     # ab Entscheidung 30.11.2026 (vorher 280), siehe unten
+TIPS_SMA = 180                    # ab Entscheidung 30.11.2026 (vorher 220), siehe unten
+TLT_SMA = 200                     # IEF-Zustand: TIPS < SMA_TIPS und TLT > SMA200
+# Parameter 28.11.2026 (Langzeitpruefung 1987-2026, ab 2001 echte TIPS; Dashboard-Repo studien/STUDIE.md):
+#  - Das Zickzack ueber die SMA-Laenge (z. B. Delle bei TIPS 200) wiederholt sich zwischen unabhaengigen Zeitraeumen
+#    nicht (Korrelation ~0) -> Rauschen einzelner Episoden; bewertet werden Bereiche, nicht Einzelwerte.
+#  - Gewaehlt wird ein Wert, der unter allen Regeln gut ist (Sharpe gesamt und ab 2001, MaxDD gesamt und ab 2001,
+#    keine Klippe, Minimax-Regret ueber vier Marktphasen).
+#  S&P 225: Mitte des Bereichs 215-235, in dem alle Kennzahlen gut sind und keine Variante unter -65 % faellt; darunter
+#    Whipsaw im Baerenmarkt 2000-03 (unter 200 bis -80 %), darueber spaeter Ausstieg in schnellen Crashs (2018-26).
+#  TIPS 180: Mitte des flachen Bereichs 150-200; 160 nur ab 2001 besser, 1987-2000/2009-17 und beim MaxDD schlechter.
+#  TLT 200 (geglaettet flach), Cooldown 10 (im Kern klar am besten: Sharpe 0,813 vs. 0,783/0,789).
 COOLDOWN_DAYS = 10
+# Stichtag: Entscheidungen auf Schlusskursen vor PARAM_SWITCH mit den alten Linien (so wurde gehandelt), ab dann
+# 225/180. Am Stichtag zeigen alte und neue Regel denselben Zustand (Cash) -> kein Handel durch die Umstellung.
+PARAM_SWITCH = "2026-11-30"
+OLD_SMA = (280, 220)              # (S&P, TIPS) fuer Entscheidungen bis 27.11.2026
 
 # Anteil 3x S&P 500 im Markt; der Rest (1 - SPX_WEIGHT) waere 1x Bitcoin. 1.0 = nur S&P 500, kein Bitcoin.
 SPX_WEIGHT = 1.0

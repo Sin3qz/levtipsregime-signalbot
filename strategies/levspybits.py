@@ -14,7 +14,7 @@ import pandas as pd
 from . import common as U
 from .constants import (STRAT_NAME, SPY_SMA, TIPS_SMA, TLT_SMA, COOLDOWN_DAYS, MARKET_ASSETS_TEXT, SPY_TICKER,
                         TIPS_TICKER, TLT_TICKER, BTC_TICKER, SPX_WEIGHT, SPY_PRODUCT, SPY_ISIN, BTC_PRODUCT, IEF_PRODUCT, IEF_ISIN, IEF_TEXT,
-                        TRY_COUNT, GRID_START, STATUS_FILE, NOTIFY_FILE, HISTORY_FILE, INFO_FOOTER, MIN_ROWS)
+                        TRY_COUNT, GRID_START, STATUS_FILE, PARAM_SWITCH, OLD_SMA, NOTIFY_FILE, HISTORY_FILE, INFO_FOOTER, MIN_ROWS)
 
 PENDING_STATE = {}
 CASH, MARKET, IEF = 0, 1, 2                      # Zustands-Codes der Maschine
@@ -36,8 +36,8 @@ def commit_notify_state():
 # ==========================================================================
 def target_series(spy, tips, tlt, spy_sma=SPY_SMA, tips_sma=TIPS_SMA, tlt_sma=TLT_SMA):
     """Zielzustand je Tag (ohne Cooldown):
-         MARKET, wenn S&P > SMA280 UND TIPS > SMA220;
-         IEF,    wenn TIPS < SMA220 UND TLT > SMA200  (TIPS-Abstand strikt negativ, beide Werte vorhanden);
+         MARKET, wenn S&P > SMA_SPY UND TIPS > SMA_TIPS (Standard aus constants);
+         IEF,    wenn TIPS < SMA_TIPS UND TLT > SMA_TLT  (TIPS-Abstand strikt negativ, beide Werte vorhanden);
          sonst CASH.  Fehlende Werte (SMA noch nicht berechenbar) = Bedingung nicht erfuellt."""
     ds = (spy / spy.rolling(spy_sma).mean() - 1).values
     dt = (tips / tips.rolling(tips_sma).mean() - 1).values
@@ -45,6 +45,18 @@ def target_series(spy, tips, tlt, spy_sma=SPY_SMA, tips_sma=TIPS_SMA, tlt_sma=TL
     market = (np.nan_to_num(ds, nan=-1) > 0) & (np.nan_to_num(dt, nan=-1) > 0)
     ief = (np.nan_to_num(dt, nan=1) < 0) & (np.nan_to_num(dl, nan=-1) > 0) & ~market
     return np.where(market, MARKET, np.where(ief, IEF, CASH)).astype(int)
+
+
+def sma_at(day):
+    """(S&P-SMA, TIPS-SMA), die fuer die Entscheidung auf dem Schlusskurs von `day` gelten (Stichtag PARAM_SWITCH)."""
+    return tuple(OLD_SMA) if str(day)[:10] < PARAM_SWITCH else (SPY_SMA, TIPS_SMA)
+
+
+def target_live(spy, tips, tlt):
+    """Zielzustand mit Parameter-Stichtag: vor PARAM_SWITCH die alten Linien (OLD_SMA), ab dann SPY_SMA/TIPS_SMA."""
+    new = target_series(spy, tips, tlt)
+    old = target_series(spy, tips, tlt, OLD_SMA[0], OLD_SMA[1])
+    return np.where(np.asarray(spy.index < pd.Timestamp(PARAM_SWITCH)), old, new)
 
 
 def machine(target, cooldown=COOLDOWN_DAYS):
@@ -108,11 +120,11 @@ def _msg(c):
     L += [f"Cooldown: {c['rem']} Handelstage gesperrt" if c["rem"] > 0 else "Cooldown: frei (Wechsel möglich)"]
     if c["no_new_day"]:
         L += [f"ℹ️ Kein neuer US-Handelstag seit {U.de_short(c['asof'])} (Wochenende/Feiertag)"]
-    rows = [["S&P 500", f"SMA{SPY_SMA}", U.pct1(c["spy_d"]), "über" if c["spy_d"] > 0 else "unter"],
-            ["US-TIPS", f"SMA{TIPS_SMA}", U.pct1(c["tips_d"]), "über" if c["tips_d"] > 0 else "unter"],
+    rows = [["S&P 500", f"SMA{c['spy_n']}", U.pct1(c["spy_d"]), "über" if c["spy_d"] > 0 else "unter"],
+            ["US-TIPS", f"SMA{c['tips_n']}", U.pct1(c["tips_d"]), "über" if c["tips_d"] > 0 else "unter"],
             ["TLT 20y+", f"SMA{TLT_SMA}", U.pct1(c["tlt_d"]), "über" if c["tlt_d"] > 0 else "unter"]]
     tab = U.table(["Signal", "Linie", "Abst.", ""], rows, "lllr")
-    rule = (f"Regel: MARKT, wenn S&P > SMA{SPY_SMA} UND TIPS > SMA{TIPS_SMA}; 3x IEF, wenn TIPS < SMA{TIPS_SMA} "
+    rule = (f"Regel: MARKT, wenn S&P > SMA{c['spy_n']} UND TIPS > SMA{c['tips_n']}; 3x IEF, wenn TIPS < SMA{c['tips_n']} "
             f"UND TLT > SMA{TLT_SMA}; sonst Cash. Nach jedem Wechsel {COOLDOWN_DAYS} Tage Sperre.")
     disc = L + ["", f"Signale (USD, Stand {U.de_short(c['asof'])}):", "```"] + tab + ["```", rule]
     ntfy = L + ["", f"Signale (Stand {U.de_short(c['asof'])}):"] + [f"{r[0]}: {r[2]} {r[3]} {r[1]}" for r in rows] + [rule]
@@ -153,10 +165,11 @@ def run_strategy(raw=None, write_files=True):
                                   prev_first=prev_first.get(TLT_TICKER))
     stale = not (f1 and f2 and f3); warns = sorted(set(w1 + w2 + w3))
 
-    tgt = target_series(spy, tips, tlt)
+    tgt = target_live(spy, tips, tlt)
     alloc, rem = machine(tgt)
     idx = grid; i = len(idx) - 1
-    spy_sma = spy.rolling(SPY_SMA).mean(); tips_sma = tips.rolling(TIPS_SMA).mean(); tlt_sma = tlt.rolling(TLT_SMA).mean()
+    spy_n, tips_n = sma_at(idx[i])                         # Linien, die fuer den juengsten Schlusskurs gelten
+    spy_sma = spy.rolling(spy_n).mean(); tips_sma = tips.rolling(tips_n).mean(); tlt_sma = tlt.rolling(TLT_SMA).mean()
     spy_d = float(spy.iloc[i] / spy_sma.iloc[i] - 1); tips_d = float(tips.iloc[i] / tips_sma.iloc[i] - 1)
     tlt_d = float(tlt.iloc[i] / tlt_sma.iloc[i] - 1)
     cur = STATE_NAMES[int(alloc[i])]
@@ -192,7 +205,7 @@ def run_strategy(raw=None, write_files=True):
         b = raw[BTC_TICKER]; btc = {"price": float(b.iloc[-1]), "date": b.index[-1].date().isoformat()}
     ctx = dict(signal=signal, state=cur, prev=prev, rem=int(rem[i]), change_date=change_date, trade=trade_c,
                late=late, today=today, pending=pending,
-               asof=idx[i].date(), spy_d=spy_d, tips_d=tips_d, tlt_d=tlt_d, btc=btc, stale=stale, warns=warns,
+               asof=idx[i].date(), spy_n=spy_n, tips_n=tips_n, spy_d=spy_d, tips_d=tips_d, tlt_d=tlt_d, btc=btc, stale=stale, warns=warns,
                no_new_day=(not stale) and idx[i].date() < U.berlin_yesterday())
     ntfy_text, disc_text = _msg(ctx)
 
@@ -201,7 +214,7 @@ def run_strategy(raw=None, write_files=True):
     status = {
         "updated": pd.Timestamp.now(tz=U.TZ).isoformat(), "name": STRAT_NAME,
         "strategy": (f"{MARKET_ASSETS_TEXT} | {IEF_TEXT} (USD-Signale, "
-                     f"SPY-SMA{SPY_SMA}/TIPS-SMA{TIPS_SMA}/TLT-SMA{TLT_SMA}, Cooldown {COOLDOWN_DAYS})"),
+                     f"SPY-SMA{spy_n}/TIPS-SMA{tips_n}/TLT-SMA{TLT_SMA}, Cooldown {COOLDOWN_DAYS})"),
         "signals": {
             "spy_usd": {"key": "spy_usd", "name": "S&P 500 (USD)", "ticker": SPY_TICKER, "currentDate": l1, "expectedDate": exp,
                         "current": float(spy.iloc[i]), "sma": float(spy_sma.iloc[i]), "diffPct": spy_d * 100, "fresh": bool(f1)},
@@ -217,10 +230,10 @@ def run_strategy(raw=None, write_files=True):
         "weightFree": False,
         "allocation": ALLOCATION[cur],
         "table": {"head": ["Signal (USD)", "Linie", "Abstand", "Status"],
-                  "note": (f"MARKT, wenn S&P und TIPS über ihrer Linie; 3x IEF, wenn TIPS unter SMA{TIPS_SMA} und TLT über "
+                  "note": (f"MARKT, wenn S&P und TIPS über ihrer Linie; 3x IEF, wenn TIPS unter SMA{tips_n} und TLT über "
                            f"SMA{TLT_SMA}; sonst Cash; nach jedem Wechsel {COOLDOWN_DAYS} Handelstage Sperre"),
-                  "rows": [["S&P 500 (^SP500TR)", f"SMA{SPY_SMA}", U.num(spy_d), "über" if spy_d > 0 else "unter"],
-                           ["US-TIPS (TIP)", f"SMA{TIPS_SMA}", U.num(tips_d), "über" if tips_d > 0 else "unter"],
+                  "rows": [["S&P 500 (^SP500TR)", f"SMA{spy_n}", U.num(spy_d), "über" if spy_d > 0 else "unter"],
+                           ["US-TIPS (TIP)", f"SMA{tips_n}", U.num(tips_d), "über" if tips_d > 0 else "unter"],
                            ["US-Treasury 20y+ (TLT)", f"SMA{TLT_SMA}", U.num(tlt_d), "über" if tlt_d > 0 else "unter"]],
                   "kinds": ["text", "text", "spct", "text"]},
         "timeline": {"span": "letzte 120 Handelstage", "what": "ob im Markt (Farbe), in 3x IEF (türkis) oder in Cash (grau)",
