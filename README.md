@@ -4,7 +4,7 @@ Discord- und ntfy-Signalbot (GitHub Actions) für die freigegebene **levSpyBits*
 **KEINE ANLAGEBERATUNG.**
 
 ## Strategie (eine Maschine, täglich, drei Zustände)
-- **MARKT**, wenn **S&P 500 Total Return (`^SP500TR`) > SMA220** **und** **US-TIPS (`TIP`) > SMA180** →
+- **MARKT**, wenn **S&P 500 Total Return (`^SP500TR`) > SMA225** **und** **US-TIPS (`TIP`) > SMA180** →
   **100 % 3x S&P 500** (WisdomTree 3USL; seit 28.10.2026 ohne Bitcoin).
 - **3x IEF (neu ab 28.10.2026)**, wenn **US-TIPS (`TIP`) < SMA180** **und** **US-Treasury 20y+ (`TLT`) > SMA200** →
   **100 % WisdomTree US Treasuries 10Y 3x Daily Leveraged** (3TYL, IE00BKT09032; dasselbe Produkt wie in levGTAA).
@@ -31,7 +31,7 @@ Bitcoin ohne Drift 27,2 % / Sortino 0,85. Realistische Erwartung eher 26–28 %.
 
 ## Was sich gegenüber der alten Version geändert hat
 - SMA160/160 → **SMA280 (S&P) / SMA220 (TIPS)**, Freeze 15 → **Cooldown 10**.
-- 28.11.2026: **S&P SMA280 → SMA220, TIPS SMA220 → SMA180** (TLT 200, Cooldown 10 bleiben). Langzeitprüfung 1987–2026 (ab 2001 echte TIPS): Das Zickzack über die SMA-Länge wiederholt sich zwischen unabhängigen Zeiträumen nicht (Rauschen einzelner Episoden), deshalb zählt der geglättete Verlauf; das Optimum wandert mit den Marktphasen, deshalb Auswahl nach Minimax-Regret über vier Perioden (in keiner Phase weit vom Bestwert). S&P 220: beste Sharpe, kleinster Rückstand und MaxDD, 30 Tage über der Klippe 170–200. TIPS 180: Mitte des flachen Bereichs 150–200 zwischen den Phasen, die ~200 bzw. ~150 bevorzugen. Stichtag `PARAM_SWITCH` = 30.11.2026: Entscheidungen davor mit 280/220 (so wurde gehandelt); am 27.11. zeigen beide Regeln Cash ohne Sperre. Details: `studien/STUDIE.md` im Dashboard-Repo.
+- 28.11.2026: **S&P SMA280 → SMA225, TIPS SMA220 → SMA180** (TLT 200, Cooldown 10 bleiben). Langzeitprüfung 1987–2026 (ab 2001 echte TIPS): Das Zickzack über die SMA-Länge wiederholt sich zwischen unabhängigen Zeiträumen nicht (Rauschen), deshalb werden Bereiche bewertet. S&P 225 ist die Mitte des Bereichs 215–235, in dem alle Kennzahlen gut sind und keine Variante unter −65 % fällt (darunter Whipsaw 2000–03, darüber später Ausstieg in schnellen Crashs). TIPS 180 ist die Mitte des flachen Bereichs 150–200. Unter sechs Regeln erfüllt die Kombination fast alle, 280/220 nur eine. Stichtag `PARAM_SWITCH` = 30.11.2026: Entscheidungen davor mit 280/220 (so wurde gehandelt); am 27.11. zeigen beide Regeln Cash ohne Sperre. Details: `studien/STUDIE.md` im Dashboard-Repo.
 - Cooldown-Zählung korrigiert: Die alte Version erlaubte den nächsten Wechsel einen Tag früher als der Backtest
   („Freeze 15“ entsprach dort 14 Sperrtagen).
 - Die Allokation wird bei jedem Lauf aus der vollen Historie neu berechnet (deterministisch, gleich dem Backtest).
@@ -55,7 +55,7 @@ strategies/constants.py      ALLE Parameter
 strategies/levspybits.py     Kern + Runner
 strategies/common.py         Kalender, Download, Datenprüfung (gleich in allen Bots)
 .github/workflows/notify2.yaml
-letsgo_status.json, history_220_180_10_USD.txt (Dateiname aus den Parametern; die alte history_280_220_10_USD.txt wird nicht mehr fortgeschrieben; Spalten: Datum, S&P, TIPS, S&P-SMA, TIPS-SMA, Cooldown, Zustand, TLT, TLT-SMA),
+letsgo_status.json, history_225_180_10_USD.txt (Dateiname aus den Parametern; die alte history_280_220_10_USD.txt wird nicht mehr fortgeschrieben; Spalten: Datum, S&P, TIPS, S&P-SMA, TIPS-SMA, Cooldown, Zustand, TLT, TLT-SMA),
 notify_state_levspybits.json  (vom Bot geschrieben)
 ```
 Secrets: `DISCORD_WEBHOOK_URL`, `NTFY_TOPIC` (optional `NTFY_SERVER`), `PAT_PUSH`. Workflow permissions: Read and write.
